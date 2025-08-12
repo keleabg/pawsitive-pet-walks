@@ -4,20 +4,25 @@ import { useEffect } from "react";
 
 export default function GlobalError({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
 }) {
   useEffect(() => {
     try {
       const details = error.stack || "";
-      (window as any).__recordHostError?.(error.message, details);
+      const w = window as unknown as {
+        __recordHostError?: (msg: string, details: string) => void;
+        parent?: Window | null;
+      };
+
+      w.__recordHostError?.(error.message, details);
       window.parent?.postMessage(
         { type: "host_error", error: error.message, details },
         "*",
       );
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [error]);
 
   return null;
